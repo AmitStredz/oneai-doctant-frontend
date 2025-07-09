@@ -60,8 +60,9 @@ export default function PatientList() {
                 <User className="text-blue-500" size={32} />
                 <div className="flex-1">
                   <div className="font-semibold text-lg text-gray-900">{patient.name}</div>
+                  <div className="text-sm text-gray-800 font-semibold">Case: {patient.case_summary}</div>
                   <div className="text-sm text-gray-600">Age: {patient.age} | Gender: {patient.gender}</div>
-                  <div className="text-xs text-gray-500">Last Visit: {patient.lastVisit} | Phone: {patient.phone}</div>
+                  <div className="text-xs text-gray-500">Last Visit: {patient.last_visit_date} | Phone: {patient.phone_number}</div>
                 </div>
                 <button className="ml-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">View</button>
               </li>

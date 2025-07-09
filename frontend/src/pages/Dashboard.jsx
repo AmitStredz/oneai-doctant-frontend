@@ -216,6 +216,7 @@ const Dashboard = ({ initialPatient }) => {
               />
             ) : (
               <PrescriptionPanel
+              patient={currentPatient}
                 prescription={prescription}
                 onSendToPharmacy={handleSendToPharmacy}
               />

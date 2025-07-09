@@ -21,7 +21,7 @@ const COMMON_RECOMMENDATIONS = [
   'Take medications as prescribed'
 ];
 
-const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
+const PrescriptionPanel = ({ prescription, onSendToPharmacy, patient }) => {
   const [selectedMedications, setSelectedMedications] = useState([]);
   const [customRecommendations, setCustomRecommendations] = useState(['']);
   const [editingMedication, setEditingMedication] = useState(null);
@@ -41,13 +41,13 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
   
   // Default prescription data structure
   const defaultPrescription = {
-    patient: {
+    patient: patient || {
       name: 'Ajmal',
       age: 20, 
       gender: 'Male',
-      phone: '87348723239',
+      phone_number: '87348723239',
       address: 'RG Road, Devi Nagar, Kottayam',
-      patientId: '5'
+      id: '5'
     },
     doctor: {
       name: 'Dr. Sarah Johnson',
@@ -70,36 +70,59 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
     ],
     medications: [
       {
-        name: 'Amoxicillin',
-        dosage: '500mg',
-        frequency: '3 times daily',
-        duration: '7 days',
-        instructions: 'Take with food',
-        route: 'Oral',
-        eatingTiming: 'After food'
-      },
-      {
-        name: 'Paracetamol',
-        dosage: '500mg',
-        frequency: 'Every 6 hours as needed',
-        duration: '5 days',
-        instructions: 'For fever and pain',
+        name: 'Vitamin B12',
+        dosage: '1000 mcg',
+        frequency: 'Once daily',
+        duration: '3 months',
+        instructions: 'Take orally with food',
         route: 'Oral',
         eatingTiming: 'With food'
       },
       {
-        name: 'Dextromethorphan',
-        dosage: '15mg',
-        frequency: 'Every 4 hours',
-        duration: '5 days',
-        instructions: 'For cough suppression',
+        name: 'Donepezil',
+        dosage: '5mg',
+        frequency: 'Once daily',
+        duration: '3 months',
+        instructions: 'Take at bedtime',
         route: 'Oral',
-        eatingTiming: 'Before food'
+        eatingTiming: 'After food'
+      },
+      {
+        name: 'Memantine',
+        dosage: '10mg',
+        frequency: 'Once daily',
+        duration: '3 months',
+        instructions: 'Take in the morning',
+        route: 'Oral',
+        eatingTiming: 'With food'
       }
     ]
   };
 
-  const currentPrescription = defaultPrescription || prescription ;
+  // Helper to check if a value is non-empty array
+  const nonEmptyArray = arr => Array.isArray(arr) && arr.length > 0;
+
+  // Compose the merged prescription (excluding patient info from API)
+  const mergedPrescription = {
+    patient: defaultPrescription.patient, // always from prop or dummy
+    doctor: defaultPrescription.doctor, // Not in API, fallback
+    symptoms: nonEmptyArray(prescription?.Symptoms) ? prescription.Symptoms : defaultPrescription.symptoms,
+    conditions: nonEmptyArray(prescription?.Conditions) ? prescription.Conditions : defaultPrescription.conditions,
+    diagnosis: prescription?.DiagnosisSummary || defaultPrescription.diagnosis,
+    keywords: nonEmptyArray(prescription?.KeyIndicators) ? prescription.KeyIndicators : defaultPrescription.keywords,
+    recommendations: nonEmptyArray(prescription?.Recommendations) ? prescription.Recommendations : defaultPrescription.recommendations,
+    medications: nonEmptyArray(prescription?.Medications)
+      ? prescription.Medications.map(med => ({
+          name: med.Name || '',
+          dosage: med.Dosage || '',
+          frequency: med.Frequency || '', // Not present in new API, fallback to blank
+          duration: med.Duration || '',
+          instructions: med.Instructions || '',
+          route: med.Route || '',
+          eatingTiming: med.EatingTiming || '' // Not present in new API, fallback to blank
+        }))
+      : defaultPrescription.medications
+  };
 
   // Add a ref for the prescription content
   const prescriptionRef = useRef(null);
@@ -141,7 +164,7 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
     if (prescriptionRef.current) {
       html2pdf().from(prescriptionRef.current).set({
         margin: 0.5,
-        filename: `prescription_${currentPrescription.patient.patientId}_${new Date().toISOString().split('T')[0]}.pdf`,
+        filename: `prescription_${mergedPrescription.patient.patientId}_${new Date().toISOString().split('T')[0]}.pdf`,
         html2canvas: { scale: 2 },
         jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
       }).save();
@@ -192,14 +215,14 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
         <div className="border-b pb-4 mb-6">
           <div className="flex justify-between items-start">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">{currentPrescription?.doctor?.clinic}</h2>
-              <p className="text-gray-800">{currentPrescription?.doctor?.name}</p>
-              <p className="text-sm text-gray-700">{currentPrescription?.doctor?.specialty}</p>
-              <p className="text-sm text-gray-700">License: {currentPrescription?.doctor?.license}</p>
+              <h2 className="text-2xl font-bold text-gray-900">{mergedPrescription?.doctor?.clinic}</h2>
+              <p className="text-gray-800">{mergedPrescription?.doctor?.name}</p>
+              <p className="text-sm text-gray-700">{mergedPrescription?.doctor?.specialty}</p>
+              <p className="text-sm text-gray-700">License: {mergedPrescription?.doctor?.license}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-700">Date: {getCurrentDate()}</p>
-              <p className="text-sm text-gray-700">Phone: {currentPrescription?.doctor?.phone}</p>
+              <p className="text-sm text-gray-700">Phone: {mergedPrescription?.doctor?.phone}</p>
             </div>
           </div>
         </div>
@@ -212,14 +235,14 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p><span className="font-medium text-gray-800">Name:</span> <span className="text-gray-900">{currentPrescription.patient?.name}</span></p>
-              <p><span className="font-medium text-gray-800">Age:</span> <span className="text-gray-900">{currentPrescription.patient?.age}</span></p>
-              <p><span className="font-medium text-gray-800">Gender:</span> <span className="text-gray-900">{currentPrescription.patient?.gender}</span></p>
+              <p><span className="font-medium text-gray-800">Name:</span> <span className="text-gray-900">{mergedPrescription.patient?.name}</span></p>
+              <p><span className="font-medium text-gray-800">Age:</span> <span className="text-gray-900">{mergedPrescription.patient?.age}</span></p>
+              <p><span className="font-medium text-gray-800">Gender:</span> <span className="text-gray-900">{mergedPrescription.patient?.gender}</span></p>
             </div>
             <div>
-              <p><span className="font-medium text-gray-800">Patient ID:</span> <span className="text-gray-900">{currentPrescription.patient?.patientId}</span></p>
-              <p><span className="font-medium text-gray-800">Phone:</span> <span className="text-gray-900">{currentPrescription.patient?.phone}</span></p>
-              <p><span className="font-medium text-gray-800">Address:</span> <span className="text-gray-900">{currentPrescription.patient?.address}</span></p>
+              <p><span className="font-medium text-gray-800">Patient ID:</span> <span className="text-gray-900">{mergedPrescription.patient?.id}</span></p>
+              <p><span className="font-medium text-gray-800">Phone:</span> <span className="text-gray-900">{mergedPrescription.patient?.phone_number}</span></p>
+              <p><span className="font-medium text-gray-800">Address:</span> <span className="text-gray-900">{mergedPrescription.patient?.address || "RG Road, Devi Nagar, Kottayam"}</span></p>
             </div>
           </div>
         </div>
@@ -231,7 +254,7 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
             <div>
               <h4 className="font-medium text-gray-800 mb-2">Symptoms:</h4>
               <ul className="list-disc list-inside text-gray-800 space-y-1">
-                {currentPrescription.symptoms.map((symptom, index) => (
+                {mergedPrescription.symptoms.map((symptom, index) => (
                   <li key={index}>{symptom}</li>
                 ))}
               </ul>
@@ -239,7 +262,7 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
             <div>
               <h4 className="font-medium text-gray-800 mb-2">Conditions:</h4>
               <ul className="list-disc list-inside text-gray-800 space-y-1">
-                {currentPrescription.conditions.map((condition, index) => (
+                {mergedPrescription.conditions.map((condition, index) => (
                   <li key={index}>{condition}</li>
                 ))}
               </ul>
@@ -254,12 +277,12 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
             Diagnosis Summary
           </h3>
           <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <p className="text-gray-900">{currentPrescription.diagnosis}</p>
+            <p className="text-gray-900">{mergedPrescription.diagnosis}</p>
           </div>
           <div className="mt-3">
             <h4 className="font-medium text-gray-800 mb-2">Key Indicators:</h4>
             <div className="flex flex-wrap gap-2">
-              {currentPrescription.keywords.map((keyword, index) => (
+              {mergedPrescription.keywords.map((keyword, index) => (
                 <span key={index} className="px-2 py-1 bg-blue-100 text-blue-900 rounded-full text-sm border border-blue-200">
                   {keyword}
                 </span>
@@ -272,7 +295,7 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">Recommendations</h3>
           <div className="flex flex-wrap gap-2 mb-4">
-            {COMMON_RECOMMENDATIONS.map((rec, idx) => (
+            {mergedPrescription.recommendations?.map((rec, idx) => (
               <button
                 key={idx}
                 type="button"
@@ -341,7 +364,7 @@ const PrescriptionPanel = ({ prescription, onSendToPharmacy }) => {
         <div className="mb-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-3">Medications</h3>
           <div className="space-y-3">
-            {[...currentPrescription.medications, ...customMedications].map((med, index) => (
+            {[...mergedPrescription.medications, ...customMedications].map((med, index) => (
               <div key={index} className="border rounded-lg p-4 hover:bg-gray-50">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">

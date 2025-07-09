@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Mic, MicOff, Square, Play } from 'lucide-react';
 
-const VoiceRecorder = ({ onTranscriptChange, onTranscriptComplete }) => {
+const VoiceRecorder = ({ onTranscriptChange }) => {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
   const [interimTranscript, setInterimTranscript] = useState('');
@@ -85,8 +85,8 @@ const VoiceRecorder = ({ onTranscriptChange, onTranscriptComplete }) => {
 
   const finishTranscription = () => {
     const finalText = transcript.trim();
-    if (finalText && onTranscriptComplete) {
-      onTranscriptComplete(finalText);
+    if (finalText) {
+      onTranscriptChange(finalText);
     }
     clearTranscript();
   };
