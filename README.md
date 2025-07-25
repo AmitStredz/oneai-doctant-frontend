@@ -1,3 +1,3 @@
 # oneai-doctant-frontend
 
-![Dashboard](./public/doctant_UI.png)
+![Dashboard](./frontend/public/doctant_UI.png)
